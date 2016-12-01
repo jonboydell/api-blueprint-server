@@ -63,9 +63,18 @@ var parseApib = function(err, result) {
         if ('GET' == ep.method) {
             router.get(ep.uri, function(req, res, next) {
                 validateRequest(req, res, next, ep);
+
             });
             router.get(ep.uri, function(req, res, next) {
-                respondOrProxy(res, res, next, ep);
+                respondOrProxy(req, res, next, ep);
+            });
+        }
+        if ('POST' == ep.method) {
+            router.post(ep.uri, function(req, res, next) {
+                validateRequest(req, res, next, ep);
+            });
+            router.post(ep.uri, function(req, res, next) {
+                respondOrProxy(req, res, next, ep);
             });
         }
     });
@@ -73,14 +82,38 @@ var parseApib = function(err, result) {
     router.use(this.proxyrouter);
 }
 
+var selectRequest = function(req, ep) {
+    return ep.requests[0];
+}
+
 var validateRequest = function(req, res, next, ep) {
-    //next();
-    res.status(400).set({'Content-Type':'application/json'}).send({'message':'sent request does not match expected request'});
+    var v = new Validator();
+    var validationResponse = {};
+    var request = selectRequest(req, ep);
+
+    if (request.schema) {
+        validationResponse = v.validate(req.body, JSON.parse(request.schema));
+    }
+
+    if(validationResponse.errors && validationResponse.errors.length > 0) {
+        var body = {};
+        body.mesage = 'Sent request does not match expected request schema';
+        body.schema = JSON.parse(request.schema);
+        res.status(400).set({'Content-Type':'application/json'}).send(body);
+    } else {
+        next();
+    }
 }
 
 var selectResponse = function(req, ep) {
-    var response = {};
-    response = ep.responses[0];
+    var response = ep.responses[0];
+    if(req.get('x-expected-status')) {
+        ep.responses.forEach(function(r) {
+            if(req.get('x-expected-status') == r.status) {
+                response = r;
+            }
+        });
+    }
     return response;
 }
 
@@ -91,7 +124,10 @@ var proxyResponse = function() {
 var respondOrProxy = function(req, res, next, ep) {
     var response = selectResponse(req, ep);
     if(proxyResponse()) next();
-    res.status(response.status).set(response.headers).send(response.body);
+    response.headers.forEach(function (h) {
+        res.set(h.name, h.value);
+    });
+    res.status(response.status).send(response.body);
 }
 
 module.exports = routermiddleware;

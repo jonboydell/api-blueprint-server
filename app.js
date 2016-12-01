@@ -21,8 +21,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-var apibmiddleware = require('./routes/apib-router-middleware');
 var proxy = require('./routes/proxy');
+var apibmiddleware = require('./routes/apib-router-middleware');
 app.use(apibmiddleware('./apiary.apib', proxy));
 app.use('/', index);
 
