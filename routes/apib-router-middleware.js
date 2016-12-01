@@ -44,6 +44,11 @@ var parseApib = function(err, result) {
                         var r = {};
                         r.headers = request.headers;
                         r.schema = request.schema;
+                        request.headers.forEach(function(h) {
+                            if ('Content-Type' == h.name) {
+                                r.contentType = h.value;
+                            }
+                        });
                         ep.requests.push(r);
                     });
                     example.responses.forEach(function(response) {
@@ -91,6 +96,13 @@ var validateRequest = function(req, res, next, ep) {
     var validationResponse = {};
     var request = selectRequest(req, ep);
 
+    if (!req.accepts(request.contentType)) {
+        var body = {};
+        body.mesage = 'Sent accept header does not match request content type';
+        body.expectedContentType = request.contentType;
+        res.status(400).set({'Content-Type':'application/json'}).send(body);
+    }
+
     if (request.schema) {
         validationResponse = v.validate(req.body, JSON.parse(request.schema));
     }
@@ -98,7 +110,7 @@ var validateRequest = function(req, res, next, ep) {
     if(validationResponse.errors && validationResponse.errors.length > 0) {
         var body = {};
         body.mesage = 'Sent request does not match expected request schema';
-        body.schema = JSON.parse(request.schema);
+        body.expectedSchema = JSON.parse(request.schema);
         res.status(400).set({'Content-Type':'application/json'}).send(body);
     } else {
         next();
