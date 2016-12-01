@@ -38,11 +38,6 @@ Requests are matched against those defined in the APIB file loaded into the mock
 
 Once proxies are working you can specify a router 'proxy' that will be executed rather than simply playing back a selected response.  You could use the proxy to actually implement your backend code whilst still having access to the validation provided by the mock server.
 
-
-Great vision, but what actually works at the moment?
----
-Request validation against the "schema" specified in the APIB file (for the request).
-
 What doesn't work?
 ---
 Proxying requests to a matching endpoint if it exists.
