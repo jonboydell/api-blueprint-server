@@ -56,6 +56,11 @@ var parseApib = function(err, result) {
                         r.status = response.name;
                         r.body = response.body;
                         r.headers = response.headers;
+                        response.headers.forEach(function(h) {
+                            if ('Content-Type' == h.name) {
+                                r.contentType = h.value;
+                            }
+                        });
                         ep.responses.push(r);
                     });
                     eps.push(ep);
@@ -91,14 +96,26 @@ var selectRequest = function(req, ep) {
     return ep.requests[0];
 }
 
+// @todo: the content type header should be matched against the request content type header
+// @todo: the accept header should be matched against the response content type header
+// @todo: need to break out this function into separate functions
 var validateRequest = function(req, res, next, ep) {
     var v = new Validator();
     var validationResponse = {};
-    var request = selectRequest(req, ep);
 
-    if (!req.accepts(request.contentType)) {
+    var request = selectRequest(req, ep);
+    var response = selectResponse(req, ep);
+
+    if (req.get('content-type') != request.contentType) {
         var body = {};
-        body.mesage = 'Sent accept header does not match request content type';
+        body.mesage = 'Sent content-type header does not match request content type';
+        body.expectedContentType = request.contentType;
+        res.status(400).set({'Content-Type':'application/json'}).send(body);
+    }
+
+    if (!req.accepts(response.contentType)) {
+        var body = {};
+        body.mesage = 'Sent accept header does not match any response content type';
         body.expectedContentType = request.contentType;
         res.status(400).set({'Content-Type':'application/json'}).send(body);
     }
