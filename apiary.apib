@@ -1,0 +1,89 @@
+FORMAT: 1A
+HOST: https://api.test.com/
+
+# test
+
+This is a test API definition to understand the limitations of API blueprint.
+
+## Hello World [/helloworld]
+
+### Does an hello world [GET]
+
+This does an hello world, just to show that something's working
+
++ Request (application/json)
+
++ Response 200 (application/json)
+
+    + Schema
+
+            {
+                "type" : "object",
+                "properties" : {
+                    "message" : {
+                        "type" : "string"
+                    }
+                }
+            }
+
+    + Body
+
+            {
+                "message" : "hello world"
+            }
+
+### Does an hello world [POST]
+
+This does an hello world, just to show that something's working
+
++ Request (application/json)
+
+    + Schema
+
+            {
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "type": "string"
+                    }
+                },
+                "required": ["username"]
+            }
+
++ Response 200 (application/json)
+
+    + Schema
+
+            {
+                "type" : "object",
+                "properties" : {
+                    "message" : {
+                        "type" : "string"
+                    }
+                }
+            }
+
+    + Body
+
+            {
+                "message" : "hello world (POST)"
+            }
+
++ Response 401 (application/json)
+
+    + Schema
+
+            {
+                "type" : "object",
+                "properties" : {
+                    "message" : {
+                        "type" : "string"
+                    }
+                }
+            }
+
+    + Body
+
+            {
+                "message" : "not authorised"
+            }
