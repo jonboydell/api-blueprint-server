@@ -6,20 +6,32 @@ var express = require('express');
 var router = express.Router();
 var proxyrouter;
 
+const DRAFTER_PARSE_TYPE = 'ast';
+const DRAFTER_DEBUG_FILE = '/../astfile.json';
+const METHOD_GET = 'GET';
+const METHOD_POST = 'POST';
+const HEADER_ACCEPT = 'Accept';
+const HEADER_CONTENT_TYPE = 'Content-Type';
+const HEADER_X_EXPECTED_STATUS = 'x-expected-status';
+const CONTENT_TYPE_JSON = "application/json";
+const STATUS_OK = 200;
+const STATUS_CLIENT_ERROR = 400;
+const STATUS_NOT_ACCEPTABLE = 406;
+
 function routermiddleware(apibfile, proxyrouter) {
     this.proxyrouter = proxyrouter;
-    fs.readFile( __dirname + '/../' + apibfile, readApib);
+    fs.readFile( __dirname + apibfile, readApib);
     return router;
 }
 
 var readApib = function(err, data) {
     if(err) { throw err; }
-    drafter.parse(data.toString(), { type: 'ast' }, parseApib);
+    drafter.parse(data.toString(), { type: DRAFTER_PARSE_TYPE }, parseApib);
 }
 
 var parseApib = function(err, result) {
     if (err) { throw err; }
-    if (debug) { fs.writeFile( __dirname + '/../astfile.json', JSON.stringify(result)); }
+    if (debug) { fs.writeFile( __dirname + DRAFTER_DEBUG_FILE, JSON.stringify(result)); }
 
     var eps = [];
 
@@ -45,7 +57,7 @@ var parseApib = function(err, result) {
                         r.headers = request.headers;
                         r.schema = request.schema;
                         request.headers.forEach(function(h) {
-                            if ('Content-Type' == h.name) {
+                            if (HEADER_CONTENT_TYPE == h.name) {
                                 r.contentType = h.value;
                             }
                         });
@@ -57,7 +69,7 @@ var parseApib = function(err, result) {
                         r.body = response.body;
                         r.headers = response.headers;
                         response.headers.forEach(function(h) {
-                            if ('Content-Type' == h.name) {
+                            if (HEADER_CONTENT_TYPE == h.name) {
                                 r.contentType = h.value;
                             }
                         });
@@ -70,7 +82,7 @@ var parseApib = function(err, result) {
     });
 
     eps.forEach(function(ep) {
-        if ('GET' == ep.method) {
+        if (METHOD_GET == ep.method) {
             router.get(ep.uri, function(req, res, next) {
                 validateRequest(req, res, next, ep);
 
@@ -79,7 +91,7 @@ var parseApib = function(err, result) {
                 respondOrProxy(req, res, next, ep);
             });
         }
-        if ('POST' == ep.method) {
+        if (METHOD_POST == ep.method) {
             router.post(ep.uri, function(req, res, next) {
                 validateRequest(req, res, next, ep);
             });
@@ -97,12 +109,12 @@ var selectRequest = function(req, ep) {
 }
 
 var invalidRequestContentType = function(req, res, request) {
-    var error = req.get('content-type') != request.contentType;
+    var error = req.get(HEADER_CONTENT_TYPE) != request.contentType;
     if (error) {
         var body = {};
         body.mesage = 'Sent content-type header does not match request content type';
         body.expectedContentType = request.contentType;
-        res.status(400).set({'Content-Type':'application/json'}).send(body);
+        res.status(STATUS_CLIENT_ERROR).set({HEADER_CONTENT_TYPE:CONTENT_TYPE_JSON}).send(body);
     }
     return error;
 }
@@ -113,7 +125,7 @@ var invalidResponseContentType = function(req, res, request, response) {
         var body = {};
         body.mesage = 'Sent accept header does not match any response content type';
         body.expectedContentType = request.contentType;
-        res.status(400).set({'Content-Type':'application/json'}).send(body);
+        res.status(STATUS_CLIENT_ERROR).set({HEADER_CONTENT_TYPE:CONTENT_TYPE_JSON}).send(body);
     }
     return error;
 }
@@ -130,7 +142,7 @@ var invalidRequestSchema = function (req, res, request) {
         var body = {};
         body.mesage = 'Sent request does not match expected request schema';
         body.expectedSchema = JSON.parse(request.schema);
-        res.status(400).set({'Content-Type':'application/json'}).send(body);
+        res.status(STATUS_CLIENT_ERROR).set({HEADER_CONTENT_TYPE:CONTENT_TYPE_JSON}).send(body);
     }
     return error;
 }
@@ -149,12 +161,11 @@ var validateRequest = function(req, res, next, ep) {
     }
 }
 
-
 var selectResponse = function(req, ep) {
     var response = ep.responses[0];
-    if(req.get('x-expected-status')) {
+    if(req.get(HEADER_X_EXPECTED_STATUS)) {
         ep.responses.forEach(function(r) {
-            if(req.get('x-expected-status') == r.status) {
+            if(req.get(HEADER_X_EXPECTED_STATUS) == r.status) {
                 response = r;
             }
         });

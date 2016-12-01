@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 var proxy = require('./routes/proxy');
 var apibmiddleware = require('./routes/apib-router-middleware');
-app.use(apibmiddleware('./apiary.apib', proxy));
+app.use(apibmiddleware('/../apiary.apib', proxy));
 app.use('/', index);
 
 // catch 404 and forward to error handler
