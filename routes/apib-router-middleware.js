@@ -96,43 +96,59 @@ var selectRequest = function(req, ep) {
     return ep.requests[0];
 }
 
-// @todo: the content type header should be matched against the request content type header
-// @todo: the accept header should be matched against the response content type header
-// @todo: need to break out this function into separate functions
-var validateRequest = function(req, res, next, ep) {
-    var v = new Validator();
-    var validationResponse = {};
-
-    var request = selectRequest(req, ep);
-    var response = selectResponse(req, ep);
-
-    if (req.get('content-type') != request.contentType) {
+var invalidRequestContentType = function(req, res, request) {
+    var error = req.get('content-type') != request.contentType;
+    if (error) {
         var body = {};
         body.mesage = 'Sent content-type header does not match request content type';
         body.expectedContentType = request.contentType;
         res.status(400).set({'Content-Type':'application/json'}).send(body);
     }
+    return error;
+}
 
-    if (!req.accepts(response.contentType)) {
+var invalidResponseContentType = function(req, res, request, response) {
+    var error = !req.accepts(response.contentType);
+    if (error) {
         var body = {};
         body.mesage = 'Sent accept header does not match any response content type';
         body.expectedContentType = request.contentType;
         res.status(400).set({'Content-Type':'application/json'}).send(body);
     }
+    return error;
+}
 
+var invalidRequestSchema = function (req, res, request) {
+    var error = false;
+    var v = new Validator();
+    var validationResponse = {};
     if (request.schema) {
         validationResponse = v.validate(req.body, JSON.parse(request.schema));
     }
-
     if(validationResponse.errors && validationResponse.errors.length > 0) {
+        error = true;
         var body = {};
         body.mesage = 'Sent request does not match expected request schema';
         body.expectedSchema = JSON.parse(request.schema);
         res.status(400).set({'Content-Type':'application/json'}).send(body);
+    }
+    return error;
+}
+
+var validateRequest = function(req, res, next, ep) {
+
+    var request = selectRequest(req, ep);
+    var response = selectResponse(req, ep);
+
+    if (invalidRequestContentType(req, res, request) ||
+            invalidResponseContentType(req, res, request, response) ||
+                invalidRequestSchema(req, res, request)) {
+
     } else {
         next();
     }
 }
+
 
 var selectResponse = function(req, ep) {
     var response = ep.responses[0];
