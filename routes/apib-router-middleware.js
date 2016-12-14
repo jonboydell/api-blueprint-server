@@ -1,11 +1,13 @@
 var fs = require('fs');
 var drafter = require('drafter');
 var Validator = require('jsonschema').Validator;
-var debug = false;
 var express = require('express');
 var router = express.Router();
 var proxyrouter;
 
+const winston = require('winston');
+
+const DEBUG = false;
 const DRAFTER_PARSE_TYPE = 'ast';
 const DRAFTER_DEBUG_FILE = '/../astfile.json';
 const METHOD_GET = 'GET';
@@ -18,20 +20,31 @@ const STATUS_OK = 200;
 const STATUS_CLIENT_ERROR = 400;
 const STATUS_NOT_ACCEPTABLE = 406;
 
+var __drafter_parse_type = DRAFTER_PARSE_TYPE;
+
+var __debug = DEBUG;
+var __debug_file = DRAFTER_DEBUG_FILE;
+
 function routermiddleware(apibfile, proxyrouter) {
     this.proxyrouter = proxyrouter;
-    fs.readFile( __dirname + apibfile, readApib);
+
+    winston.log('info', 'starting api blueprint server', {'blueprint':apibfile});
+
+    var files = require('../loadfilepromise.js');
+    files.readFile(__dirname + apibfile).then(function(data) {
+        readApib(data);
+    });
+
     return router;
 }
 
-var readApib = function(err, data) {
-    if(err) { throw err; }
+var readApib = function(data) {
     drafter.parse(data.toString(), { type: DRAFTER_PARSE_TYPE }, parseApib);
 }
 
 var parseApib = function(err, result) {
     if (err) { throw err; }
-    if (debug) { fs.writeFile( __dirname + DRAFTER_DEBUG_FILE, JSON.stringify(result)); }
+    if (__debug) { fs.writeFile( __dirname + __debug_file, JSON.stringify(result)); }
 
     var eps = [];
 
@@ -85,7 +98,6 @@ var parseApib = function(err, result) {
         if (METHOD_GET == ep.method) {
             router.get(ep.uri, function(req, res, next) {
                 validateRequest(req, res, next, ep);
-
             });
             router.get(ep.uri, function(req, res, next) {
                 respondOrProxy(req, res, next, ep);
@@ -101,6 +113,7 @@ var parseApib = function(err, result) {
         }
     });
 
+    winston.log('info', 'i have mapped', {'endpoints':eps.length});
     router.use(this.proxyrouter);
 }
 
