@@ -30,7 +30,7 @@ function routermiddleware(apibfile, proxyrouter) {
 
     winston.log('info', 'starting api blueprint server', {'blueprint':apibfile});
 
-    var files = require('../loadfilepromise.js');
+    var files = require('../filepromises.js');
     files.readFile(__dirname + apibfile).then(function(data) {
         readApib(data);
     });

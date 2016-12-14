@@ -1,5 +1,4 @@
 var fs = require('fs');
-var drafter = require('drafter');
 
 var readFile = function(filename) {
     return new Promise(function(resolve, reject) {
