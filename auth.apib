@@ -1,0 +1,141 @@
+FORMAT: 1A
+HOST: https://api.test.com/
+
+# test
+
+This is a test API definition to understand the limitations of API blueprint.
+
+## Authentication [/auth]
+
+### Authenticate user [POST]
+
+This authenticates a user's credentials (or not), returns a JWT token (or not)
+
++ Request (application/json)
+
+    + Schema
+
+            {
+                "type" : "object",
+                "properties" : {
+                    "username" : {
+                        "type" : "string"
+                    },
+                    "password" : {
+                        "type" : "string"
+                    },
+                    "method" : {
+                        "type" : "string"
+                    }
+                },
+                "required": ["username", "password", "method"]
+            }
+
+    + Body
+
+            {
+                "username" : "my-username",
+                "password" : "my-password",
+                "method"   : "jwt"
+            }
+
++ Response 200 (application/json)
+
+    + Schema
+
+            {
+                "type" : "object",
+                "properties" : {
+                    "token" : {
+                        "type" : "string"
+                    }
+                }
+            }
+
+    + Body
+
+            {
+                "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ"
+            }
+
++ Response 401 (application/json)
+
+    + Schema
+
+            {
+                "type" : "object",
+                "properties" : {
+                    "message" : {
+                        "type" : "string"
+                    }
+                }
+            }
+
+    + Body
+
+            {
+                "message" : "not authorised"
+            }
+
+## Subscriptions [/subs]
+
+### List subscriptions [POST]
+
+Returns a list of all the user's subscriptions, active or otherwise
+
++ Request (application/json)
+
+    + Schema
+
+            {
+                "type" : "object",
+                "properties" : {
+                    "token" : {
+                        "type" : "string"
+                    }
+                },
+                "required": ["token"]
+            }
+
+    + Body
+
+            {
+                "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ"
+            }
+
++ Response 200 (application/json)
+
+    + Body
+
+            [
+                {
+                    "uuid":"fec2f4e0-46aa-44e7-a1b8-7faf4dd6486b",
+                    "created":1483613045,
+                    "active":true
+                },
+                {
+                    "uuid":"7cea4d3e-2e4a-46e1-8102-6eadf19e0538",
+                    "created":1481544732,
+                    "active":false
+                }
+            ]
+
+
++ Response 401 (application/json)
+
+    + Schema
+
+            {
+                "type" : "object",
+                "properties" : {
+                    "message" : {
+                        "type" : "string"
+                    }
+                }
+            }
+
+    + Body
+
+            {
+                "message" : "not authorised"
+            }

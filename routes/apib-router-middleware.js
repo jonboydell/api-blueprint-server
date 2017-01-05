@@ -114,6 +114,9 @@ var parseApib = function(err, result) {
     });
 
     winston.log('info', 'i have mapped', {'endpoints':eps.length});
+    eps.forEach(function(ep) {
+        winston.log('info', 'i have mapped', ep.method, ep.uri);
+    });
     router.use(this.proxyrouter);
 }
 
