@@ -186,13 +186,14 @@ var selectResponse = function(req, ep) {
     return response;
 }
 
-var proxyResponse = function() {
+var proxyResponse = function(req) {
+    winston.log('info', 'proxy not found', {'method':req.method, 'path':req.path});
     return false;
 }
 
 var respondOrProxy = function(req, res, next, ep) {
     var response = selectResponse(req, ep);
-    if(proxyResponse()) next();
+    if(proxyResponse(req)) next();
     response.headers.forEach(function (h) {
         res.set(h.name, h.value);
     });
